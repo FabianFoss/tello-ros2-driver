@@ -14,13 +14,13 @@ sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o
 
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
-# Install ROS Foxy
-sudo apt install ros-foxy-desktop python3-argcomplete ros-foxy-ros-base python3-argcomplete ros-dev-tools
+# Install ROS humble
+sudo apt install ros-humble-desktop python3-argcomplete ros-humble-ros-base python3-argcomplete ros-dev-tools
 
-# Setup ROS Foxy
-source /opt/ros/foxy/setup.bash
+# Setup ROS humble
+source /opt/ros/humble/setup.bash
 ros2 run demo_nodes_cpp talker
-echo "source /opt/ros/foxy/setup.bash" >> ~/.bashrc
+echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 printenv | grep -i ROS
 sudo rm -r ros2_galactic/
 printenv | grep -i ROS
@@ -30,7 +30,7 @@ mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws
 cd src/
 cd ..
-git clone https://github.com/ros2/examples src/examples -b foxy
+git clone https://github.com/ros2/examples src/examples -b humble
 colcon build --symlink-install
 colcon test
 . install/setup.bash

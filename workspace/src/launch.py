@@ -4,7 +4,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     nodes = [
-        # Tello driver node
+        # TELLO
         Node(
             package='tello',
             executable='tello',
@@ -23,7 +23,6 @@ def generate_launch_description():
             respawn=True
         ),
 
-        # Tello control node
         Node(
             package='tello_control',
             executable='tello_control',
@@ -33,17 +32,32 @@ def generate_launch_description():
             respawn=False
         ),
 
-        # RQT topic debug tool
+        # TRANSFORMERS
         Node(
-            package='rqt_gui',
-            executable='rqt_gui',
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='static_tf_pub_camera',
             output='screen',
-            namespace='/',
-            name='rqt',
-            respawn=False
+            arguments=['0.0', '0.0', '0.0', '0.0', '0.0', '0.0', '1.0', 'drone', 'camera_depth_frame'],        
+        ),
+        
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='static_tf_pub_drone_to_base_link',
+            output='screen',
+            arguments=['0.0', '0.0', '0.0', '0.0', '0.0', '0.0', '1.0', 'drone', 'base_link'],        
         ),
 
-        # RViz data visualization tool
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='static_tf_pub_odom_to_map',
+            output='screen',
+            arguments=['0.0', '0.0', '0.0', '0.0', '0.0', '0.0', '1.0', 'map', 'odom'],        
+        ),
+        
+        # RVIZ
         Node(
             package='rviz2',
             executable='rviz2',
@@ -51,48 +65,32 @@ def generate_launch_description():
             namespace='/',
             name='rviz2',
             respawn=True,
-            arguments=['-d', '/home/tentone/Git/tello-slam/workspace/src/rviz.rviz']
+            arguments=['-d', '/home/fabianfossbudal/repos/master-thesis-mono-repo/tello-ros2-driver/workspace/src/nav2_rviz.rviz']
         ),
 
-        # Static TF publisher
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            namespace='/',
-            name='tf',
-            arguments=['0', '0', '0', '0', '0', '0', '1', 'map', 'drone'],
-            respawn=True
-        ),
-
-        # ORB SLAM
+        # Localization node
         # Node(
-        #     package='orbslam2',
-        #     executable='mono',
+        #     package='robot_localization',
+        #     executable='ekf_node',
+        #     name='ekf_filter_node',
         #     output='screen',
-        #     namespace='/',
-        #     name='orbslam',
-        #     respawn=True,
-        #     remappings=[
-        #         ('/camera', '/image_raw')
-        #     ],
-        #     arguments=['~/Git/tello-slam/libs/ORB_SLAM2/Vocabulary/ORBvoc.txt', '~/Git/tello-slam/workspace/src/orbslam2/config.yaml']
+        #     parameters=["/home/fabianfossbudal/repos/master-thesis-mono-repo/tello-ros2-driver/workspace/src/tello/resource/ekf.yaml", {'use_sim_time': False}]
         # ),
 
-        # Camera calibration node
-        # Node(
-        #     package='camera_calibration',
-        #     executable='cameracalibrator',
-        #     output='screen',
-        #     respawn=True,
-        #     namespace='/',
-        #     name='calibration',
-        #     arguments=['--size', '7x9', '--square', '0.20'],
-        #     parameters=[
-        #         {'image': '/image_raw'},
-        #         {'camera': '/camera_info'}
-        #     ]
-        # )
-    ]
+        # Waypoint action server
+        Node(
+            package='nav_through_waypoints',
+            executable='nav_through_points',
+            name='nav_through_points',
+            output='screen',
+        ),
 
+        Node(
+            package='video_saver',
+            executable='capture_video_node',
+            name='capture_video_node',
+            output='screen',
+        ),
+    ]
 
     return LaunchDescription(nodes)

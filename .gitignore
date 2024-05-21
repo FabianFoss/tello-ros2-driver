@@ -5,7 +5,7 @@ workspace/src/__pycache__/
 workspace/src/build/
 workspace/src/lib/
 workspace/src/install/
-
+**/__pycache__
 .vscode/.ropeproject/
 
 log/

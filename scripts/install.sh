@@ -6,7 +6,7 @@ if (( $EUID > 0 )); then
 fi
 
 #Install ROS 2
-echo " - Installing ROS 2 Foxy"
+echo " - Installing ROS 2 humble"
 
 echo " - Install Build Tools"
 
@@ -30,12 +30,12 @@ sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org/ros
 
 echo " - Install ROS 2"
 
-# Install ROS 2 (foxy)
+# Install ROS 2 (humble)
 apt update
-apt install -y ros-foxy-desktop
+apt install -y ros-humble-desktop
 
 # Step envrioment
-source /opt/ros/foxy/setup.bash
+source /opt/ros/humble/setup.bash
 
 echo " - Install Python ROS 2"
 
@@ -52,7 +52,7 @@ rosdep fix-permissions
 
 # Add to bashrc
 echo " - Register ROS 2 in .bashrc"
-echo "source /opt/ros/foxy/setup.bash" >> ~/.bashrc
+echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 echo "source /usr/share/colcon_cd/function/colcon_cd.sh" >> ~/.bashrc
 echo "export _colcon_cd_root=~/ros2_install" >> ~/.bashrc
 source ~/.bashrc
@@ -63,7 +63,7 @@ pip3 install catkin_pkg rospkg av image opencv-python djitellopy2 pyyaml
 apt install python3-tf*
 
 echo " - CPP dependencies"
-apt install ros-foxy-ament-cmake* ros-foxy-tf2* ros-foxy-rclcpp* ros-foxy-rosgraph*
+apt install ros-humble-ament-cmake* ros-humble-tf2* ros-humble-rclcpp* ros-humble-rosgraph*
 
 echo " - Rviz and RQT Tools"
-apt install ros-foxy-rviz* ros-foxy-rqt*
+apt install ros-humble-rviz* ros-humble-rqt*

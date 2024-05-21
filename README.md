@@ -120,14 +120,14 @@ ros2 run ros2_orbslam mono <VOCABULARY FILE> <CONFIG_FILE>
 
 
 
-### Setup ROS 2 Foxy
+### Setup ROS 2 humble
 
-- Run the install script to setup the ROS 2 (Foxy Fitzroy) environment. 
+- Run the install script to setup the ROS 2 (humble Fitzroy) environment. 
 - Check the [ROS2 Tutorials](https://index.ros.org/doc/ros2/Tutorials/) page to learn how to setup workspace and create packages.
 
 ##### Workspace
 
-- To install dependencies of the packages available in a workspace directory `src` run `rosdep install -i --from-path src --rosdistro foxy -y`
+- To install dependencies of the packages available in a workspace directory `src` run `rosdep install -i --from-path src --rosdistro humble -y`
 - To build workspace you can use the command `colcon build`,  some useful arguments for `colcon build`:
 
   - `--packages-up-to` builds the package you want, plus all its dependencies, but not the whole workspace (saves time)

@@ -6,7 +6,7 @@ if (( $EUID > 0 )); then
 fi
 
 echo " - Install dependencies"
-apt install ros-foxy-vision-opencv ros-foxy-message-filters libeigen3-dev
+apt install ros-humble-vision-opencv ros-humble-message-filters libeigen3-dev
 
 echo "- Create libs folder"
 mkdir -p ../libs

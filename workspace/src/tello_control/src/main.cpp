@@ -99,7 +99,7 @@ class TelloControl : public rclcpp::Node
 		void manualControl(int key)
 		{
 			// Speed of the drone in manual control mode.
-			double manual_speed = 50;
+			double manual_speed = 40;
 
 			geometry_msgs::msg::Twist msg = geometry_msgs::msg::Twist();
 		

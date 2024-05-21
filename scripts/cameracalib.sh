@@ -6,4 +6,4 @@ if (( $EUID > 0 )); then
 fi
 
 echo " - Install Camera Calibration"
-apt install ros-foxy-camera-calibration ros-foxy-camera-calibration-parsers ros-foxy-camera-info-manager ros-foxy-launch-testing-ament-cmake
+apt install ros-humble-camera-calibration ros-humble-camera-calibration-parsers ros-humble-camera-info-manager ros-humble-launch-testing-ament-cmake

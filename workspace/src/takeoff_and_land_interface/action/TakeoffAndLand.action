@@ -1,0 +1,10 @@
+# File: action/DroneCommand.action
+
+# Goal definition
+string command  # 'takeoff' or 'land'
+---
+# Result definition
+bool success
+---
+# Feedback definition
+string status  # Feedback messages like "Taking off", "Landing", "At altitude"
