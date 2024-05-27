@@ -22,7 +22,7 @@ class WaypointFollowerClient(Node):
         self.get_logger().info("Got mission message!")
         if self.waypoints is None:
             poses = msg.poses  # Assuming z=0 for all waypoints
-            waypoints = [create_pose(pt.position.x, pt.position.y, 0) for pt in poses]  # Assuming z=0 for all waypoints            self.send_takeoff_or_land("takeoff")
+            waypoints = [create_pose(pt.position.x, pt.position.y, 0) for pt in poses]  # Assuming z=0 for all waypoints for simplicity purposes           self.send_takeoff_or_land("takeoff")
             self.waypoints = waypoints
             self.send_takeoff_or_land("takeoff")
         else:

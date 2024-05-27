@@ -11,6 +11,7 @@ import tf2_ros
 import cv2
 import time
 import yaml
+import numpy as np
 
 from djitellopy import Tello
 
@@ -48,7 +49,9 @@ class TelloNode():
         self.tf_drone = str(self.node.get_parameter('tf_drone').value)
         self.tf_pub = bool(self.node.get_parameter('tf_pub').value)
         self.camera_info_file = str(self.node.get_parameter('camera_info_file').value)
-
+        
+        self.ekf = False # Parameter used to test robot_localization package
+        
         # Camera information loaded from calibration yaml
         self.camera_info = None
         
@@ -60,7 +63,7 @@ class TelloNode():
         # Read camera info from YAML file
         with open(self.camera_info_file, 'r') as file:
             self.camera_info = yaml.load(file, Loader=yaml.FullLoader)
-            self.node.get_logger().info('Tello: Camera information YAML' + self.camera_info.__str__()) # Not actually correct for tello, but modified for depth image approach
+            # self.node.get_logger().info('Tello: Camera information YAML' + self.camera_info.__str__()) # Not actually correct for tello, but modified for depth image approach
 
         # Configure drone connectionFalse
         Tello.TELLO_IP = self.tello_ip
@@ -96,6 +99,8 @@ class TelloNode():
 
         self.node.get_logger().info('Tello: Driver node ready')
 
+
+
     # Setup ROS publishers of the node.
     def setup_publishers(self):
         self.pub_image_raw = self.node.create_publisher(Image, 'image_raw', 1)
@@ -123,12 +128,17 @@ class TelloNode():
     
     # Get the orientation of the drone as a quaternion
     def get_orientation_quaternion(self):
+        y, p ,r = self.get_orientation_rad()
+        return euler_to_quaternion([y, p, r])
+    
+    def get_orientation_rad(self):
         deg_to_rad = math.pi / 180.0
-        return euler_to_quaternion([
-            self.tello.get_yaw() * deg_to_rad*-1,
-            self.tello.get_pitch() * deg_to_rad*-1,
-            self.tello.get_roll() * deg_to_rad
-        ])
+
+        y = self.tello.get_yaw() * deg_to_rad*-1 # Flip axis
+        p = self.tello.get_pitch() * deg_to_rad*-1 # Flip axis
+        r = self.tello.get_roll() * deg_to_rad
+
+        return y, p ,r
 
     # Start drone info thread
     def start_tello_odom(self, rate=1.0/30.0):
@@ -137,21 +147,28 @@ class TelloNode():
                 current_time = self.node.get_clock().now()
                 dt = (current_time - self.last_update_time).nanoseconds / 1e9  # Convert from nanoseconds to seconds
                 self.last_update_time = current_time
+                
+                """
+                NOTE: 
+                According to tello docs, speed and acceleration come in cm/s. 
+                Our experience is that this offers very innacurate measurements and that dividing by 10 instead yields much better results
+                """
+                speed_x = float(self.tello.get_speed_x()) / 10.0
+                speed_y = float(self.tello.get_speed_y()) / 10.0*-1 # Flip axis
+                speed_z = float(self.tello.get_speed_z()) / 10.0*-1 # Flip axis
 
+                acc_x = self.tello.get_acceleration_x() / 100.0
+                acc_y = self.tello.get_acceleration_y() / 100.0*-1
+                acc_z = self.tello.get_acceleration_z() / 100.0*-1
                 
                 if self.tf_pub:
-                    speed_x = float(self.tello.get_speed_x()) / 10.0
-                    speed_y = float(self.tello.get_speed_y()) / 10.0*-1 # Flip axis
-                    speed_z = float(self.tello.get_speed_z()) / 10.0*-1
-                    
                     # Get orientation quaternion
                     q = self.get_orientation_quaternion()
-                    # self.node.get_logger().info(str(q))
-                    # Update position based on speed and delta time
                     
-                    self.position_x += speed_x * dt
-                    self.position_y += speed_y * dt
-                    self.position_z += speed_z * dt
+                    # Update position based on speed and delta time
+                    self.position_x += (speed_x * dt) + 0.5*acc_x*dt**2
+                    self.position_y += (speed_y * dt) + 0.5*acc_y*dt**2
+                    self.position_z += (speed_z * dt) #+ 0.5*acc_z*dt**2 (too unreliable)
                 
                     # Transform odom -> drone
                     t_odom_base = TransformStamped()
@@ -159,10 +176,10 @@ class TelloNode():
                     t_odom_base.header.frame_id = 'odom'
                     t_odom_base.child_frame_id = self.tf_drone
 
-                    t_odom_base.transform.rotation.x = q[0] + self.initial_orientation[0]
-                    t_odom_base.transform.rotation.y = q[1] + self.initial_orientation[1]
-                    t_odom_base.transform.rotation.z = q[2] + self.initial_orientation[2]
-                    t_odom_base.transform.rotation.w = q[3] + self.initial_orientation[3]
+                    t_odom_base.transform.rotation.x = q[0]
+                    t_odom_base.transform.rotation.y = q[1]
+                    t_odom_base.transform.rotation.z = q[2]
+                    t_odom_base.transform.rotation.w = q[3]
 
                     t_odom_base.transform.translation.x = self.position_x
                     t_odom_base.transform.translation.y = self.position_y
@@ -170,7 +187,7 @@ class TelloNode():
 
                     self.tf_broadcaster.sendTransform(t_odom_base)
 
-                if True:
+                if not self.ekf:
                     
                     # Get orientation quaternion
                     q = self.get_orientation_quaternion()
@@ -179,11 +196,6 @@ class TelloNode():
                     msg = Imu()
                     msg.header.stamp = self.node.get_clock().now().to_msg()
                     msg.header.frame_id = self.tf_drone
-                    
-                    # Calculate acceleration
-                    acc_x = self.tello.get_acceleration_x() / 10.0
-                    acc_y = self.tello.get_acceleration_y() / 10.0
-                    acc_z = self.tello.get_acceleration_z() / 10.0
                     
                     msg.linear_acceleration.x = acc_x
                     msg.linear_acceleration.y = acc_y
@@ -199,18 +211,14 @@ class TelloNode():
                     odom_msg.header.stamp = self.node.get_clock().now().to_msg()
                     odom_msg.header.frame_id = "odom"
 
-                    speed_x = float(self.tello.get_speed_x()) / 10.0
-                    speed_y = float(self.tello.get_speed_y()) / 10.0*-1 # Flip axis
-                    speed_z = float(self.tello.get_speed_z()) / 10.0*-1
-                    
                     odom_msg.twist.twist.linear.x = speed_x
                     odom_msg.twist.twist.linear.y = speed_y
                     odom_msg.twist.twist.linear.z = speed_z
                     
-                    odom_msg.pose.pose.orientation.x = q[0] + self.initial_orientation[0]
-                    odom_msg.pose.pose.orientation.y = q[1] + self.initial_orientation[1]
-                    odom_msg.pose.pose.orientation.z = q[2] + self.initial_orientation[2]
-                    odom_msg.pose.pose.orientation.w = q[3] + self.initial_orientation[3]
+                    odom_msg.pose.pose.orientation.x = q[0]
+                    odom_msg.pose.pose.orientation.y = q[1]
+                    odom_msg.pose.pose.orientation.z = q[2]
+                    odom_msg.pose.pose.orientation.w = q[3]
                     
                     odom_msg.pose.pose.position.x = self.position_x
                     odom_msg.pose.pose.position.y = self.position_y
@@ -218,6 +226,60 @@ class TelloNode():
 
                     self.pub_odom.publish(odom_msg)
                     self.pub_imu.publish(msg)
+                
+                if self.ekf: # Code block for robot_localization package - we are unable to get accurate and stable estimates
+                    # Get orientation quaternion
+                    q = self.get_orientation_quaternion()
+                    yaw, pith, roll = self.get_orientation_rad()
+
+                    now = self.node.get_clock().now().to_msg()
+                    
+                    # Publish IMU
+                    imu_msg = Imu()
+                    imu_msg.header.stamp = now
+                    imu_msg.header.frame_id = "drone"
+
+                    # Calculate acceleration
+                    acc_x = float(self.tello.get_acceleration_x()) / 10.0
+                    acc_y = float(self.tello.get_acceleration_y()) / 10.0
+                    acc_z = float(self.tello.get_acceleration_z()) / 10.0
+
+                    # imu_msg.linear_acceleration.x = acc_x
+                    # imu_msg.linear_acceleration.y = acc_y
+                    # imu_msg.linear_acceleration.z = acc_z
+                    
+                    imu_msg.orientation.x = q[0]
+                    imu_msg.orientation.y = q[1]
+                    imu_msg.orientation.z = q[2]
+                    imu_msg.orientation.w = q[3]
+
+                    self.pub_imu.publish(imu_msg)
+
+                    # Publish odometry
+                    odom_msg = Odometry()
+                    odom_msg.header.stamp = now
+                    odom_msg.header.frame_id = "odom"
+                    odom_msg.child_frame_id = self.tf_drone
+
+                    speed_x = float(self.tello.get_speed_x()) / 10.0
+                    speed_y = float(self.tello.get_speed_y()) / 10.0 
+                    speed_z = float(self.tello.get_speed_z()) / 10.0
+
+                    """
+                    NOTE: 
+                    Tello gives decomposed vector x and y speeds and not forwards and backwards with respect to the drone
+                    Hence we rotate the axis to get forward and backwards in relation to the drone instead
+                    """
+                    odom_msg.twist.twist.linear.x = speed_x*np.cos(yaw) - speed_y*np.sin(yaw)
+                    odom_msg.twist.twist.linear.y = speed_y*np.sin(yaw) + speed_x*np.cos(yaw)
+                    odom_msg.twist.twist.linear.z = speed_z
+                    
+                    # odom_msg.pose.pose.orientation.x = q[0]
+                    # odom_msg.pose.pose.orientation.y = q[1]
+                    # odom_msg.pose.pose.orientation.z = q[2]
+                    # odom_msg.pose.pose.orientation.w = q[3]
+
+                    self.pub_odom.publish(odom_msg)
 
                 time.sleep(rate)
 

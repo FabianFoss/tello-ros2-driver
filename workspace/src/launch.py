@@ -44,6 +44,15 @@ def generate_launch_description():
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
+            name='static_tf_pub_imu',
+            output='screen',
+            arguments=['0.0', '0.0', '0.0', '0.0', '0.0', '0.0', '1.0', 'drone', 'imu'],        
+        ),
+        
+
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
             name='static_tf_pub_drone_to_base_link',
             output='screen',
             arguments=['0.0', '0.0', '0.0', '0.0', '0.0', '0.0', '1.0', 'drone', 'base_link'],        
@@ -68,13 +77,13 @@ def generate_launch_description():
             arguments=['-d', '/home/fabianfossbudal/repos/master-thesis-mono-repo/tello-ros2-driver/workspace/src/nav2_rviz.rviz']
         ),
 
-        # Localization node
+        # # Localization node
         # Node(
         #     package='robot_localization',
         #     executable='ekf_node',
         #     name='ekf_filter_node',
         #     output='screen',
-        #     parameters=["/home/fabianfossbudal/repos/master-thesis-mono-repo/tello-ros2-driver/workspace/src/tello/resource/ekf.yaml", {'use_sim_time': False}]
+        #     parameters=["/home/fabianfossbudal/repos/master-thesis-mono-repo/nav2_ws/src/config/ekf2.yaml", {'use_sim_time': False}]
         # ),
 
         # Waypoint action server

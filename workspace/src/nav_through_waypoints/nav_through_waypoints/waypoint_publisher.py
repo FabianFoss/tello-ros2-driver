@@ -17,13 +17,13 @@ class WaypointPublisher(Node):
     def publish_waypoints(self):
         if not self.published:
             initial_pose = PoseWithCovarianceStamped()
-            initial_pose.pose.pose.position.x = 0.0
-            initial_pose.pose.pose.position.y = 0.0
+            initial_pose.pose.pose.position.x = 4.5
+            initial_pose.pose.pose.position.y = -3.0
             initial_pose.pose.pose.position.z = 0.0
 
             self.initial_pos_pub.publish(initial_pose)
 
-            time.sleep(10)
+            # time.sleep(10)
 
             pose_array = PoseArray()
             pose_array.header = Header(frame_id='map', stamp=self.get_clock().now().to_msg())
@@ -39,9 +39,9 @@ class WaypointPublisher(Node):
                 #((2.0, 0.0, 4.0), (0.0, 0.0, 0.0, 1.0)),
                 #((10.13, 0.0, 4.0), (0.0, 0.0, 0.0, 1.0))
 
-                ((4.5, 0.0, 4.0), (0.0, 0.0, 0.0, 1.0)),
-                ((4.5, -4.0, 4.0), (0.0, 0.0, 0.0, 1.0)),
-                ((4.5, 0.0, 4.0), (0.0, 0.0, 0.0, 1.0)),
+                # ((3.9, 0.0, 4.0), (0.0, 0.0, 0.7071,0.7071)),
+                # ((4.5, -3.0, 4.0), (0.0, 0.0, -0.7071,0.7071)),
+                # ((4.0, 0.0, 4.0), (0.0, 0.0, 0.0, 1.0)),
                 ((0.0, 0.0, 4.0), (0.0, 0.0, 0.0, 1.0)),
             ]
             
